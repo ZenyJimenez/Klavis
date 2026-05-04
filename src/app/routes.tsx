@@ -18,6 +18,8 @@ import { AdminReports } from "./components/AdminReports"
 import { AdminIncidents } from "./components/AdminIncidents"
 import { AdminSettings } from "./components/AdminSettings"
 import { AdminParking } from "./components/AdminParking"
+import { AdminVehicles } from "./components/AdminVehicles"
+import { AdminSensors } from "./components/AdminSensors"
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +34,8 @@ export const router = createBrowserRouter([
       { path: "users", Component: AdminUserManagement },
       { path: "visitors", Component: AdminVisitors },
       { path: "providers", Component: AdminProviders },
+      { path: "vehicles", Component: AdminVehicles },
+      { path: "sensors", Component: AdminSensors },
       { path: "real-time", Component: AdminRealTime },
       { path: "parking", Component: AdminParking },
       { path: "reports", Component: AdminReports },

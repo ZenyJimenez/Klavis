@@ -18,6 +18,13 @@ import {
 import { Card, Badge, Button } from "./ui"
 import { motion, AnimatePresence } from "motion/react"
 
+const EXISTING_VEHICLES = [
+  { plate: "BCN-4521", brand: "Toyota", model: "Corolla", color: "Blanco", owners: ["Carlos Hernández L.", "Mariana Hernández L.", "Daniel Hernández R."] },
+  { plate: "MXL-0012", brand: "Nissan", model: "Sentra", color: "Azul", owners: ["Ana López Castillo", "Sofía López Castillo"] },
+  { plate: "BCN-7890", brand: "Ford", model: "F-150", color: "Gris", owners: ["Coca-Cola"] },
+  { plate: "SON-1234", brand: "Chevrolet", model: "Spark", color: "Rojo", owners: ["José Martínez"] },
+]
+
 const MOCK_USERS = [
   { id: "1", name: "Carlos Hernández López", email: "21490001@itmexicali.edu.mx", role: "Alumno", controlNumber: "21490001", uid: "UID-A001", status: "Activo" },
   { id: "2", name: "María García Ruiz", email: "21490002@itmexicali.edu.mx", role: "Alumno", controlNumber: "21490002", uid: "UID-A002", status: "Activo" },
@@ -33,6 +40,9 @@ export function AdminUserManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [step, setStep] = useState(1)
   const [scanning, setScanning] = useState(false)
+  const [vehicleMode, setVehicleMode] = useState<"existing" | "new">("existing")
+  const [vehicleSearch, setVehicleSearch] = useState("")
+  const [selectedVehiclePlate, setSelectedVehiclePlate] = useState<string | null>(null)
 
   const filteredUsers = MOCK_USERS.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -274,35 +284,92 @@ export function AdminUserManagement() {
                       </label>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-[#0F172A]">Número de Placa</label>
-                        <input type="text" placeholder="Ej. ABC-123-A" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-[#0F172A]">Marca</label>
-                        <input type="text" placeholder="Ej. Toyota" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-[#0F172A]">Modelo</label>
-                        <input type="text" placeholder="Ej. Corolla 2020" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-[#0F172A]">Color</label>
-                        <input type="text" placeholder="Ej. Blanco" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
-                      </div>
+                    {/* Modo: existente vs nuevo */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <button type="button" onClick={() => setVehicleMode("existing")} className={`h-12 rounded-lg border text-sm font-semibold flex items-center justify-center gap-2 ${vehicleMode === "existing" ? "bg-blue-50 border-[#2563EB] text-[#2563EB]" : "bg-white border-[#E2E8F0] text-[#475569]"}`}>
+                        <DirectionsCar fontSize="small" />Asignar vehículo existente
+                      </button>
+                      <button type="button" onClick={() => setVehicleMode("new")} className={`h-12 rounded-lg border text-sm font-semibold flex items-center justify-center gap-2 ${vehicleMode === "new" ? "bg-blue-50 border-[#2563EB] text-[#2563EB]" : "bg-white border-[#E2E8F0] text-[#475569]"}`}>
+                        <Add fontSize="small" />Registrar nuevo vehículo
+                      </button>
                     </div>
 
-                    <div className="pt-4 border-t border-[#E2E8F0] space-y-3">
-                      <label className="text-sm font-medium text-[#0F172A]">ID Tag RFID (Vehicular)</label>
-                      <div className="flex gap-3">
-                        <input type="text" readOnly placeholder={scanning ? "Escaneando..." : "Escanea el tag UHF..."} className="flex-1 px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-sm font-mono focus:outline-none" />
-                        <Button onClick={handleScan} variant="outline" className="gap-2 shrink-0">
-                          {scanning ? <div className="w-4 h-4 border-2 border-[#2563EB] border-t-transparent rounded-full animate-spin" /> : <Nfc fontSize="small" />}
-                          {scanning ? "Leyendo..." : "Escanear Tag"}
-                        </Button>
+                    {vehicleMode === "existing" ? (
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" fontSize="small" />
+                          <input
+                            type="text"
+                            value={vehicleSearch}
+                            onChange={e => setVehicleSearch(e.target.value)}
+                            placeholder="Buscar por placa, marca o modelo..."
+                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB]"
+                          />
+                        </div>
+                        <p className="text-xs text-[#64748B]">El alumno se sumará a la lista de propietarios del vehículo seleccionado.</p>
+                        <div className="border border-[#E2E8F0] rounded-xl divide-y divide-[#E2E8F0] max-h-72 overflow-y-auto">
+                          {EXISTING_VEHICLES.filter(v =>
+                            !vehicleSearch || `${v.plate} ${v.brand} ${v.model}`.toLowerCase().includes(vehicleSearch.toLowerCase())
+                          ).map(v => {
+                            const selected = selectedVehiclePlate === v.plate
+                            return (
+                              <button
+                                key={v.plate}
+                                type="button"
+                                onClick={() => setSelectedVehiclePlate(v.plate)}
+                                className={`w-full flex items-center gap-3 p-3 text-left transition-colors ${selected ? "bg-blue-50" : "hover:bg-[#F8FAFC]"}`}
+                              >
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${selected ? "bg-[#2563EB] text-white" : "bg-[#F1F5F9] text-[#64748B]"}`}>
+                                  <DirectionsCar fontSize="small" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono font-bold text-[#0A1628]">{v.plate}</span>
+                                    <span className="text-xs text-[#64748B]">{v.brand} {v.model} · {v.color}</span>
+                                  </div>
+                                  <p className="text-xs text-[#64748B] mt-0.5">
+                                    {v.owners.length} alumno{v.owners.length !== 1 ? "s" : ""} asignado{v.owners.length !== 1 ? "s" : ""}: {v.owners.join(", ")}
+                                  </p>
+                                </div>
+                                {selected && <CheckCircle className="text-[#2563EB] shrink-0" fontSize="small" />}
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-[#0F172A]">Número de Placa</label>
+                            <input type="text" placeholder="Ej. ABC-123-A" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-[#0F172A]">Marca</label>
+                            <input type="text" placeholder="Ej. Toyota" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-[#0F172A]">Modelo</label>
+                            <input type="text" placeholder="Ej. Corolla 2020" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-[#0F172A]">Color</label>
+                            <input type="text" placeholder="Ej. Blanco" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
+                          </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-[#E2E8F0] space-y-3">
+                          <label className="text-sm font-medium text-[#0F172A]">ID Tag RFID (Vehicular)</label>
+                          <div className="flex gap-3">
+                            <input type="text" readOnly placeholder={scanning ? "Escaneando..." : "Escanea el tag UHF..."} className="flex-1 px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-sm font-mono focus:outline-none" />
+                            <Button onClick={handleScan} variant="outline" className="gap-2 shrink-0">
+                              {scanning ? <div className="w-4 h-4 border-2 border-[#2563EB] border-t-transparent rounded-full animate-spin" /> : <Nfc fontSize="small" />}
+                              {scanning ? "Leyendo..." : "Escanear Tag"}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </motion.div>
                 )}
                 {step === 3 && (

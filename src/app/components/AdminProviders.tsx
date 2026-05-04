@@ -1,412 +1,367 @@
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "./ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import PersonIcon from "@mui/icons-material/Person";
-import PlaceIcon from "@mui/icons-material/Place";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
-import NotesIcon from "@mui/icons-material/Notes";
-import EventBusyIcon from "@mui/icons-material/EventBusy";
+import PeopleIcon from "@mui/icons-material/People";
+import EventIcon from "@mui/icons-material/Event";
+import BusinessIcon from "@mui/icons-material/Business";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 
-interface Appointment {
+const allEntries = ["Puerta Principal", "Puerta Secundaria", "Vehicular Norte", "Vehicular Sur"];
+
+interface Person {
   id: string;
-  title: string;
-  status: "Pendiente" | "Completado" | "Cancelado";
-  provider: string;
-  area: string;
-  datetime: string;
-  host: string;
-  reason: string;
+  name: string;
+  idType: string;
+  idNumber: string;
+  vehicles: string[];
+}
+interface Company {
+  id: string;
+  name: string;
+  industry: string;
+  phone: string;
+  email: string;
+  entries: string[];
+  people: Person[];
+  nextVisit?: string;
+  hasCalendar: boolean;
 }
 
-const initialAppointments: Appointment[] = [
+const initialCompanies: Company[] = [
   {
-    id: "1",
-    title: "Mantenimiento de equipos",
-    status: "Pendiente",
-    provider: "Ing. Pedro Solís",
-    area: "Centro de Cómputo",
-    datetime: "2026-03-05 09:00",
-    host: "Gloria Delgado",
-    reason: "Mantenimiento preventivo trimestral",
+    id: "1", name: "Coca-Cola", industry: "Alimentación", phone: "664-100-1000", email: "contacto@coca-cola.com",
+    entries: ["Puerta Principal", "Vehicular Norte"],
+    people: [
+      { id: "p1", name: "Sr. Juan Valdez", idType: "INE", idNumber: "INE-9001", vehicles: ["BCN-7890"] },
+      { id: "p2", name: "Lic. Andrea Soto", idType: "INE", idNumber: "INE-9002", vehicles: [] },
+    ],
+    nextVisit: "Mañana 09:00", hasCalendar: true,
   },
   {
-    id: "2",
-    title: "Auditoría administrativa",
-    status: "Pendiente",
-    provider: "Lic. Martha Rojas",
-    area: "Dirección",
-    datetime: "2026-03-05 10:00",
-    host: "Héctor Peña",
-    reason: "Revisión de procesos internos",
+    id: "2", name: "Siemens", industry: "Tecnología", phone: "664-200-2000", email: "service@siemens.mx",
+    entries: ["Puerta Principal"],
+    people: [{ id: "p3", name: "Ing. Marco Ríos", idType: "INE", idNumber: "INE-001", vehicles: ["MXL-5544"] }],
+    nextVisit: "Vie 11:00", hasCalendar: true,
   },
   {
-    id: "3",
-    title: "Entrega de papelería",
-    status: "Completado",
-    provider: "Sr. Juan Valdez",
-    area: "Almacén",
-    datetime: "2026-03-05 08:00",
-    host: "Norma Guerrero",
-    reason: "Surtido mensual de papelería",
+    id: "3", name: "Distribuidora García", industry: "Alimentación", phone: "664-300-3000", email: "ventas@dgarcia.mx",
+    entries: ["Vehicular Sur"], people: [], hasCalendar: false,
   },
   {
-    id: "4",
-    title: "Conferencia de IA",
-    status: "Pendiente",
-    provider: "Dra. Carmen Olvera",
-    area: "Auditorio",
-    datetime: "2026-03-06 16:00",
-    host: "Roberto Mendoza",
-    reason: "Conferencia sobre inteligencia artificial aplicada",
+    id: "4", name: "Papelería Ofimex", industry: "Otro", phone: "664-400-4000", email: "ofi@ofimex.mx",
+    entries: ["Puerta Principal"], people: [], hasCalendar: false,
   },
-  {
-    id: "5",
-    title: "Instalación de cámaras",
-    status: "Pendiente",
-    provider: "Ing. Ricardo Bernal",
-    area: "Edificio A",
-    datetime: "2026-03-07 07:00",
-    host: "Raúl Ibarra",
-    reason: "Ampliación del sistema de videovigilancia",
-  }
 ];
 
+const initials = (name: string) => name.split(" ").slice(0, 2).map(s => s[0]).join("").toUpperCase();
+const colorForName = (name: string) => {
+  const colors = ["bg-rose-100 text-rose-700", "bg-blue-100 text-blue-700", "bg-emerald-100 text-emerald-700", "bg-amber-100 text-amber-700", "bg-purple-100 text-purple-700"];
+  return colors[name.charCodeAt(0) % colors.length];
+};
+
 export function AdminProviders() {
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
-  const [activeFilter, setActiveFilter] = useState("Mensual");
-  
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [companies, setCompanies] = useState<Company[]>(initialCompanies);
+  const [filter, setFilter] = useState<"Todas" | "Con calendario" | "Sin calendario">("Todas");
+  const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
-  // Form State
-  const [formData, setFormData] = useState({
-    title: "",
-    provider: "",
-    area: "",
-    date: "",
-    time: "",
-    host: "",
-    reason: "",
-    status: "Pendiente" as Appointment["status"]
+  const [form, setForm] = useState({ name: "", industry: "Otro", phone: "", email: "", entries: [] as string[] });
+  const [peopleViewId, setPeopleViewId] = useState<string | null>(null);
+
+  // person modal
+  const [isPersonOpen, setIsPersonOpen] = useState(false);
+  const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
+  const [personForm, setPersonForm] = useState({ name: "", idType: "INE", idNumber: "", phone: "", vehicles: "" });
+
+  const filtered = companies.filter(c => {
+    if (filter === "Con calendario" && !c.hasCalendar) return false;
+    if (filter === "Sin calendario" && c.hasCalendar) return false;
+    if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completado": return "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20";
-      case "Cancelado": return "bg-[#DC2626]/10 text-[#DC2626] border-[#DC2626]/20";
-      case "Pendiente": return "bg-[#D97706]/10 text-[#D97706] border-[#D97706]/20";
-      default: return "bg-slate-100 text-slate-700";
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const openNewModal = () => {
+  const openNew = () => {
     setEditingId(null);
-    setFormData({
-      title: "",
-      provider: "",
-      area: "",
-      date: "",
-      time: "",
-      host: "",
-      reason: "",
-      status: "Pendiente"
-    });
-    setIsModalOpen(true);
+    setForm({ name: "", industry: "Otro", phone: "", email: "", entries: [] });
+    setIsOpen(true);
   };
-
-  const openEditModal = (apt: Appointment) => {
-    setEditingId(apt.id);
-    // Split datetime "2026-03-05 09:00"
-    const [date, time] = apt.datetime.split(" ");
-    
-    setFormData({
-      title: apt.title,
-      provider: apt.provider,
-      area: apt.area,
-      date: date || "",
-      time: time || "",
-      host: apt.host,
-      reason: apt.reason,
-      status: apt.status
-    });
-    setIsModalOpen(true);
+  const openEdit = (c: Company) => {
+    setEditingId(c.id);
+    setForm({ name: c.name, industry: c.industry, phone: c.phone, email: c.email, entries: c.entries });
+    setIsOpen(true);
   };
+  const toggleEntry = (e: string) => setForm(prev => ({ ...prev, entries: prev.entries.includes(e) ? prev.entries.filter(x => x !== e) : [...prev.entries, e] }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const newAppointment: Appointment = {
-      id: editingId || Math.random().toString(),
-      title: formData.title,
-      provider: formData.provider,
-      area: formData.area,
-      datetime: `${formData.date} ${formData.time}`,
-      host: formData.host,
-      reason: formData.reason,
-      status: formData.status
-    };
-
     if (editingId) {
-      setAppointments(appointments.map(apt => apt.id === editingId ? newAppointment : apt));
+      setCompanies(companies.map(c => c.id === editingId ? { ...c, ...form } : c));
     } else {
-      setAppointments([newAppointment, ...appointments]);
+      setCompanies([{ id: Math.random().toString(), ...form, people: [], hasCalendar: false }, ...companies]);
     }
-    
-    setIsModalOpen(false);
+    setIsOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    setAppointments(appointments.filter(app => app.id !== id));
+  const peopleViewCompany = peopleViewId ? companies.find(c => c.id === peopleViewId) : null;
+
+  const openNewPerson = () => {
+    setEditingPersonId(null);
+    setPersonForm({ name: "", idType: "INE", idNumber: "", phone: "", vehicles: "" });
+    setIsPersonOpen(true);
   };
+  const openEditPerson = (p: Person) => {
+    setEditingPersonId(p.id);
+    setPersonForm({ name: p.name, idType: p.idType, idNumber: p.idNumber, phone: "", vehicles: p.vehicles.join(", ") });
+    setIsPersonOpen(true);
+  };
+  const handleSavePerson = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!peopleViewId) return;
+    const newPerson: Person = {
+      id: editingPersonId || Math.random().toString(),
+      name: personForm.name,
+      idType: personForm.idType,
+      idNumber: personForm.idNumber,
+      vehicles: personForm.vehicles.split(",").map(v => v.trim()).filter(Boolean),
+    };
+    setCompanies(companies.map(c => {
+      if (c.id !== peopleViewId) return c;
+      return {
+        ...c,
+        people: editingPersonId ? c.people.map(p => p.id === editingPersonId ? newPerson : p) : [...c.people, newPerson],
+      };
+    }));
+    setIsPersonOpen(false);
+  };
+
+  if (peopleViewCompany) {
+    return (
+      <div className="p-6 md:p-8 max-w-7xl mx-auto w-full bg-[#F8FAFC] min-h-screen">
+        <button onClick={() => setPeopleViewId(null)} className="flex items-center gap-2 text-[#2563EB] hover:underline mb-6 font-medium">
+          <ArrowBackIcon fontSize="small" />Volver a empresas
+        </button>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-[#0A1628]">Personas — {peopleViewCompany.name}</h1>
+            <p className="text-[#64748B] mt-1 font-medium">{peopleViewCompany.people.length} personas registradas</p>
+          </div>
+          <Button onClick={openNewPerson} className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white">
+            <AddIcon fontSize="small" className="mr-2" />Agregar persona
+          </Button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] overflow-hidden">
+          {peopleViewCompany.people.length === 0 ? (
+            <div className="p-12 text-center text-[#64748B]">No hay personas asignadas a esta empresa.</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                <tr className="text-left text-[#64748B] font-semibold">
+                  <th className="px-4 py-3">Persona</th>
+                  <th className="px-4 py-3">Identificación</th>
+                  <th className="px-4 py-3">Vehículos</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {peopleViewCompany.people.map(p => (
+                  <tr key={p.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC]">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${colorForName(p.name)}`}>{initials(p.name)}</div>
+                        <span className="font-medium text-[#0F172A]">{p.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-[#334155]">{p.idType} · {p.idNumber}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1 flex-wrap">
+                        {p.vehicles.length > 0 ? p.vehicles.map(v => <Badge key={v} className="font-mono bg-blue-50 text-[#2563EB] border border-blue-200">{v}</Badge>) : <span className="text-[#94A3B8] text-xs">Sin vehículos</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEditPerson(p)} className="h-8 w-8 p-0 text-[#64748B] hover:text-[#2563EB]"><EditIcon fontSize="small" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => setCompanies(companies.map(c => c.id === peopleViewCompany.id ? { ...c, people: c.people.filter(x => x.id !== p.id) } : c))} className="h-8 w-8 p-0 text-[#64748B] hover:text-[#DC2626]"><DeleteIcon fontSize="small" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <Dialog open={isPersonOpen} onOpenChange={setIsPersonOpen}>
+          <DialogContent className="sm:max-w-[480px] bg-white rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-[#0A1628]">{editingPersonId ? "Editar Persona" : "Nueva Persona"}</DialogTitle>
+              <DialogDescription>Datos de la persona asignada a {peopleViewCompany.name}.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSavePerson} className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label className="text-[#0F172A] font-semibold text-sm">Nombre completo</Label>
+                <Input required value={personForm.name} onChange={e => setPersonForm({ ...personForm, name: e.target.value })} className="h-11 border-[#E2E8F0]" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-[#0F172A] font-semibold text-sm">Tipo ID</Label>
+                  <Select value={personForm.idType} onValueChange={v => setPersonForm({ ...personForm, idType: v })}>
+                    <SelectTrigger className="h-11 border-[#E2E8F0]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {["INE", "Pasaporte", "Licencia", "Otro"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#0F172A] font-semibold text-sm">Número ID</Label>
+                  <Input required value={personForm.idNumber} onChange={e => setPersonForm({ ...personForm, idNumber: e.target.value })} className="h-11 border-[#E2E8F0]" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#0F172A] font-semibold text-sm">Teléfono (opcional)</Label>
+                <Input value={personForm.phone} onChange={e => setPersonForm({ ...personForm, phone: e.target.value })} className="h-11 border-[#E2E8F0]" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#0F172A] font-semibold text-sm">Vehículos asignados (placas separadas por coma)</Label>
+                <div className="flex gap-2">
+                  <Input value={personForm.vehicles} onChange={e => setPersonForm({ ...personForm, vehicles: e.target.value })} placeholder="BCN-7890, MXL-1234" className="h-11 border-[#E2E8F0] font-mono flex-1" />
+                  <Button type="button" variant="outline" onClick={() => setPersonForm(p => ({ ...p, vehicles: p.vehicles ? p.vehicles + ", NEW-0000" : "NEW-0000" }))} className="h-11 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-medium shrink-0">
+                    <AddIcon fontSize="small" className="mr-1" />Crear y asignar
+                  </Button>
+                </div>
+              </div>
+              <DialogFooter className="pt-2">
+                <Button type="button" variant="outline" onClick={() => setIsPersonOpen(false)}>Cancelar</Button>
+                <Button type="submit" className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white">Guardar persona</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto w-full flex flex-col h-full bg-[#F8FAFC] min-h-screen">
-      {/* Header section */}
+    <div className="p-6 md:p-8 max-w-7xl mx-auto w-full bg-[#F8FAFC] min-h-screen">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[#0A1628] m-0 tracking-tight">Calendario Institucional</h1>
-          <p className="text-[#64748B] mt-1 font-medium">Gestión de proveedores y citas programadas</p>
+          <h1 className="text-2xl font-bold text-[#0A1628] tracking-tight">Empresas Proveedoras</h1>
+          <p className="text-[#64748B] mt-1 font-medium">Catálogo de empresas autorizadas y sus personas</p>
         </div>
-        
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
-          {/* Filters */}
-          <div className="flex bg-[#E2E8F0] p-1 rounded-lg w-full sm:w-auto">
-            {["Diario", "Semanal", "Mensual"].map(filter => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${
-                  activeFilter === filter 
-                    ? 'bg-white text-[#0F172A] shadow-sm' 
-                    : 'text-[#64748B] hover:text-[#0F172A]'
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-          
-          <Button onClick={openNewModal} className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white font-medium shadow-sm transition-all w-full sm:w-auto shrink-0">
-            <AddIcon fontSize="small" className="mr-2" />
-            Nueva Cita
-          </Button>
+        <Button onClick={openNew} className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white">
+          <AddIcon fontSize="small" className="mr-2" />Nueva Empresa
+        </Button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] p-5 mb-6 flex flex-col sm:flex-row gap-3">
+        <Input placeholder="Buscar empresa..." value={search} onChange={e => setSearch(e.target.value)} className="h-11 border-[#E2E8F0] flex-1" />
+        <div className="flex bg-[#E2E8F0] p-1 rounded-lg">
+          {(["Todas", "Con calendario", "Sin calendario"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all ${filter === f ? "bg-white text-[#0F172A] shadow-sm" : "text-[#64748B]"}`}>{f}</button>
+          ))}
         </div>
       </div>
 
-      {/* Content Grid */}
-      {appointments.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {appointments.map((apt) => (
-            <div key={apt.id} className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] p-5 flex flex-col hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-4 gap-3">
-                <h3 className="text-[16px] font-bold text-[#0F172A] leading-tight">{apt.title}</h3>
-                <Badge className={`shrink-0 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(apt.status)}`}>
-                  {apt.status}
-                </Badge>
-              </div>
-
-              <div className="space-y-3 flex-1 mb-5">
-                <div className="flex items-start gap-3 text-[#64748B]">
-                  <PersonIcon fontSize="small" className="text-[#94A3B8] text-[18px] mt-0.5 shrink-0" />
-                  <span className="text-sm font-semibold text-[#334155] leading-snug">{apt.provider}</span>
-                </div>
-                <div className="flex items-start gap-3 text-[#64748B]">
-                  <PlaceIcon fontSize="small" className="text-[#94A3B8] text-[18px] mt-0.5 shrink-0" />
-                  <span className="text-sm leading-snug">{apt.area}</span>
-                </div>
-                <div className="flex items-start gap-3 text-[#64748B]">
-                  <AccessTimeIcon fontSize="small" className="text-[#94A3B8] text-[18px] mt-0.5 shrink-0" />
-                  <span className="text-sm leading-snug">{apt.datetime}</span>
-                </div>
-                <div className="flex items-start gap-3 text-[#64748B]">
-                  <AssignmentIndIcon fontSize="small" className="text-[#94A3B8] text-[18px] mt-0.5 shrink-0" />
-                  <span className="text-sm leading-snug">Resp: <span className="font-medium text-[#475569]">{apt.host}</span></span>
-                </div>
-                <div className="flex items-start gap-3 text-[#64748B]">
-                  <NotesIcon fontSize="small" className="text-[#94A3B8] text-[18px] mt-0.5 shrink-0" />
-                  <span className="text-sm italic leading-snug line-clamp-2" title={apt.reason}>{apt.reason}</span>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-[#E2E8F0]">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-9 px-3 text-[#64748B] hover:text-[#2563EB] hover:bg-blue-50 font-medium"
-                  onClick={() => openEditModal(apt)}
-                >
-                  <EditIcon fontSize="small" className="mr-1.5" /> Editar
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-9 px-3 text-[#64748B] hover:text-[#DC2626] hover:bg-red-50 font-medium"
-                  onClick={() => handleDelete(apt.id)}
-                >
-                  <DeleteIcon fontSize="small" className="mr-1.5" /> Eliminar
-                </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filtered.map(c => (
+          <div key={c.id} className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] p-5 hover:shadow-md transition-shadow flex flex-col">
+            <div className="flex items-start gap-3 mb-4">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-sm ${colorForName(c.name)}`}>{initials(c.name)}</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-[16px] font-bold text-[#0F172A] leading-tight">{c.name}</h3>
+                <p className="text-xs text-[#64748B] mt-0.5">{c.industry}</p>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        /* Empty State */
-        <div className="flex flex-col items-center justify-center flex-1 py-20 px-4 bg-white rounded-xl shadow-sm border border-[#E2E8F0] border-dashed mt-2">
-          <div className="w-24 h-24 bg-[#F8FAFC] rounded-full flex items-center justify-center mb-5 border border-[#E2E8F0]">
-            <EventBusyIcon className="text-[#94A3B8]" style={{ fontSize: 48 }} />
+            <div className="space-y-2 text-sm flex-1 mb-4">
+              <div className="flex items-center gap-2 text-[#64748B]">
+                <PeopleIcon fontSize="small" className="text-[#94A3B8]" />
+                <span>{c.people.length} personas</span>
+              </div>
+              <div>
+                <p className="text-xs text-[#64748B] mb-1.5">Entradas permitidas</p>
+                <div className="flex flex-wrap gap-1">
+                  {c.entries.length > 0 ? c.entries.map(e => <Badge key={e} className="bg-blue-50 text-[#2563EB] border border-blue-200 text-[10px]">{e}</Badge>) : <span className="text-[#94A3B8] text-xs">Ninguna</span>}
+                </div>
+              </div>
+              {c.nextVisit && (
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <EventIcon fontSize="small" />
+                  <span className="font-medium">{c.nextVisit}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-1 pt-3 border-t border-[#E2E8F0]">
+              <Button variant="ghost" size="sm" onClick={() => openEdit(c)} className="flex-1 h-9 text-[#64748B] hover:text-[#2563EB] hover:bg-blue-50"><EditIcon fontSize="small" className="mr-1" />Editar</Button>
+              <Button variant="ghost" size="sm" onClick={() => setPeopleViewId(c.id)} className="flex-1 h-9 text-[#64748B] hover:text-[#0F172A] hover:bg-slate-50"><PeopleIcon fontSize="small" className="mr-1" />Personas</Button>
+              <Button variant="ghost" size="sm" onClick={() => setCompanies(companies.filter(x => x.id !== c.id))} className="h-9 w-9 p-0 text-[#64748B] hover:text-[#DC2626] hover:bg-red-50"><DeleteIcon fontSize="small" /></Button>
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-[#0F172A] mb-2 text-center">No hay citas programadas</h3>
-          <p className="text-[#64748B] text-center max-w-sm mb-8 font-medium">
-            No hay citas programadas para este período. Puede crear una nueva cita para gestionar accesos de proveedores.
-          </p>
-          <Button onClick={openNewModal} className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white font-medium h-11 px-6">
-            <AddIcon fontSize="small" className="mr-2" />
-            Nueva Cita
-          </Button>
-        </div>
-      )}
+        ))}
+        {filtered.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 bg-white rounded-xl border border-dashed border-[#E2E8F0]">
+            <BusinessIcon className="text-[#94A3B8]" style={{ fontSize: 48 }} />
+            <h3 className="text-lg font-bold text-[#0F172A] mt-3">No hay empresas</h3>
+          </div>
+        )}
+      </div>
 
-      {/* Create/Edit Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white border-[#E2E8F0] rounded-2xl">
-          <div className="bg-[#0A1628] text-white p-6 pb-5">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[520px] p-0 overflow-hidden bg-white rounded-2xl">
+          <div className="bg-[#0A1628] text-white p-6">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-white tracking-tight text-left">
-                {editingId ? 'Editar Cita' : 'Nueva Cita'}
-              </DialogTitle>
-              <DialogDescription className="text-[#94A3B8] mt-1.5 text-left">
-                {editingId ? 'Modifique los detalles de la cita en el calendario.' : 'Complete los detalles para programar un acceso al calendario institucional.'}
-              </DialogDescription>
+              <DialogTitle className="text-xl font-bold text-white text-left">{editingId ? "Editar Empresa" : "Nueva Empresa"}</DialogTitle>
+              <DialogDescription className="text-[#94A3B8] mt-1 text-left">Información de la empresa proveedora.</DialogDescription>
             </DialogHeader>
           </div>
-          
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+          <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Nombre de la empresa</Label>
+              <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-11 border-[#E2E8F0]" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Giro/industria</Label>
+              <Select value={form.industry} onValueChange={v => setForm({ ...form, industry: v })}>
+                <SelectTrigger className="h-11 border-[#E2E8F0]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["Alimentación", "Tecnología", "Mantenimiento", "Limpieza", "Otro"].map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-[#0F172A] font-semibold text-sm">Título de la visita</Label>
-                <Input 
-                  id="title" 
-                  required 
-                  value={formData.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
-                  placeholder="Ej. Mantenimiento preventivo"
-                  className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                />
+                <Label className="text-[#0F172A] font-semibold text-sm">Teléfono</Label>
+                <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="h-11 border-[#E2E8F0]" />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="provider" className="text-[#0F172A] font-semibold text-sm">Nombre del proveedor y/o Responsable</Label>
-                <Input 
-                  id="provider" 
-                  required 
-                  value={formData.provider}
-                  onChange={(e) => handleInputChange("provider", e.target.value)}
-                  placeholder="Ej. Ing. Pedro Solís"
-                  className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="area" className="text-[#0F172A] font-semibold text-sm">Área de destino</Label>
-                <Input 
-                  id="area" 
-                  required 
-                  value={formData.area}
-                  onChange={(e) => handleInputChange("area", e.target.value)}
-                  placeholder="Ej. Centro de Cómputo"
-                  className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date" className="text-[#0F172A] font-semibold text-sm">Fecha</Label>
-                  <Input 
-                    id="date" 
-                    type="date" 
-                    required 
-                    value={formData.date}
-                    onChange={(e) => handleInputChange("date", e.target.value)}
-                    className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="time" className="text-[#0F172A] font-semibold text-sm">Hora</Label>
-                  <Input 
-                    id="time" 
-                    type="time" 
-                    required 
-                    value={formData.time}
-                    onChange={(e) => handleInputChange("time", e.target.value)}
-                    className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="host" className="text-[#0F172A] font-semibold text-sm">Responsable del acceso</Label>
-                <Input 
-                  id="host" 
-                  required 
-                  value={formData.host}
-                  onChange={(e) => handleInputChange("host", e.target.value)}
-                  placeholder="Ej. Gloria Delgado"
-                  className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="status" className="text-[#0F172A] font-semibold text-sm">Estatus</Label>
-                <select 
-                  id="status"
-                  value={formData.status}
-                  onChange={(e) => handleInputChange("status", e.target.value)}
-                  className="flex w-full h-11 border border-[#E2E8F0] focus:ring-[#2563EB] rounded-md px-3 py-2 text-sm outline-none"
-                >
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Completado">Completado</option>
-                  <option value="Cancelado">Cancelado</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="reason" className="text-[#0F172A] font-semibold text-sm">Motivo detallado</Label>
-                <Textarea 
-                  id="reason" 
-                  required 
-                  value={formData.reason}
-                  onChange={(e) => handleInputChange("reason", e.target.value)}
-                  placeholder="Escriba los detalles del motivo de acceso..."
-                  className="border-[#E2E8F0] focus-visible:ring-[#2563EB] min-h-[80px] resize-none"
-                />
+                <Label className="text-[#0F172A] font-semibold text-sm">Correo</Label>
+                <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="h-11 border-[#E2E8F0]" />
               </div>
             </div>
-
-            <DialogFooter className="pt-4 mt-2 border-t border-[#E2E8F0]">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsModalOpen(false)}
-                className="font-medium"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white font-medium">
-                {editingId ? 'Guardar Cambios' : 'Agendar Cita'}
-              </Button>
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Entradas permitidas</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {allEntries.map(e => (
+                  <label key={e} className={`flex items-center gap-2 p-2.5 border rounded-md cursor-pointer ${form.entries.includes(e) ? "bg-blue-50 border-[#2563EB]" : "bg-white border-[#E2E8F0]"}`}>
+                    <input type="checkbox" checked={form.entries.includes(e)} onChange={() => toggleEntry(e)} className="accent-[#2563EB]" />
+                    <span className="text-sm text-[#334155]">{e}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-[#64748B] leading-relaxed mt-1.5">
+                Si el proveedor accede por una entrada no autorizada, el sistema lo registrará con alerta pero no bloqueará el acceso.
+              </p>
+            </div>
+            <DialogFooter className="pt-4 border-t border-[#E2E8F0]">
+              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white">Guardar empresa</Button>
             </DialogFooter>
           </form>
         </DialogContent>

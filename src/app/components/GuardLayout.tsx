@@ -1,20 +1,52 @@
 import imgKlavisLogo1 from "figma:asset/da9c5f090346b090388c669d3e7c116edcd58dfb.png"
 import { Outlet, Link, useLocation } from "react-router"
-import { Shield, AccessTime, Event, Notifications, Logout, Menu, ReportProblem, LocalParking, Close } from "@mui/icons-material"
-import { useState } from "react"
+import {
+  Shield, AccessTime, Event, Notifications, Logout, Menu,
+  ReportProblem, LocalParking, Close, ExpandMore, Verified, BusinessCenter
+} from "@mui/icons-material"
+import { useState, useMemo } from "react"
+
+interface NavItem { icon: any; label: string; path: string }
+interface NavGroup { id: string; label: string; icon: any; items: NavItem[] }
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    id: "operacion", label: "Operación", icon: Verified,
+    items: [
+      { icon: Shield, label: "Accesos", path: "/guard" },
+      { icon: AccessTime, label: "Historial", path: "/guard/history" },
+      { icon: LocalParking, label: "Estacionamiento", path: "/guard/parking" },
+    ],
+  },
+  {
+    id: "visitantes", label: "Visitantes", icon: BusinessCenter,
+    items: [
+      { icon: Event, label: "Calendario", path: "/guard/calendar" },
+      { icon: Notifications, label: "Avisos", path: "/guard/notices" },
+    ],
+  },
+  {
+    id: "seguridad", label: "Seguridad", icon: ReportProblem,
+    items: [
+      { icon: ReportProblem, label: "Incidentes", path: "/guard/incidents" },
+    ],
+  },
+]
 
 export function GuardLayout() {
   const location = useLocation()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const tabs = [
-    { id: "accesses", icon: Shield, label: "Accesos", path: "/guard" },
-    { id: "history", icon: AccessTime, label: "Historial", path: "/guard/history" },
-    { id: "calendar", icon: Event, label: "Calendario", path: "/guard/calendar" },
-    { id: "incidents", icon: ReportProblem, label: "Incidencias", path: "/guard/incidents" },
-    { id: "parking", icon: LocalParking, label: "Parking", path: "/guard/parking" },
-    { id: "notices", icon: Notifications, label: "Avisos", path: "/guard/notices" },
-  ]
+  const isItemActive = (path: string) =>
+    location.pathname === path || (path !== "/guard" && location.pathname.startsWith(path))
+
+  const activeGroupId = useMemo(() => {
+    const g = NAV_GROUPS.find(group => group.items.some(i => isItemActive(i.path)))
+    return g?.id || "operacion"
+  }, [location.pathname])
+
+  const [openGroup, setOpenGroup] = useState<string>(activeGroupId)
+  const handleToggle = (id: string) => setOpenGroup(prev => (prev === id ? "" : id))
 
   const SidebarContent = () => (
     <>
@@ -24,24 +56,52 @@ export function GuardLayout() {
         </div>
         <span className="font-['Inter'] font-bold leading-[28px] text-[20px] text-white tracking-[2px]">KLAVIS</span>
       </div>
-      
-      <nav className="flex-[778_0_0] min-h-px min-w-px relative w-full pt-[24px] px-[16px] flex flex-col gap-[4px] overflow-y-auto">
-        {tabs.map((item) => {
-          const isActive = location.pathname === item.path || (item.path !== "/guard" && location.pathname.startsWith(item.path))
+
+      <nav className="flex-1 min-h-px min-w-px relative w-full pt-[16px] px-[12px] flex flex-col gap-[2px] overflow-y-auto">
+        {NAV_GROUPS.map(group => {
+          const isOpen = openGroup === group.id
+          const hasActive = group.items.some(i => isItemActive(i.path))
           return (
-            <Link
-              key={item.id}
-              to={item.path}
-              onClick={() => setDrawerOpen(false)}
-              className={`h-[44px] relative rounded-[8px] flex items-center pl-[16px] gap-[12px] transition-colors group ${
-                isActive
-                  ? "bg-[#2563EB] text-white"
-                  : "text-[#64748B] hover:bg-[rgba(255,255,255,0.05)] hover:text-white"
-              }`}
-            >
-              <item.icon fontSize="small" className={isActive ? "text-white" : "inherit"} />
-              <span className={`font-['Inter'] font-medium text-[14px] leading-[20px] ${isActive ? 'text-white' : 'text-[#64748b] group-hover:text-white'}`}>{item.label}</span>
-            </Link>
+            <div key={group.id} className="flex flex-col">
+              <button
+                onClick={() => handleToggle(group.id)}
+                className={`h-[42px] rounded-[8px] flex items-center justify-between pl-[16px] pr-[12px] gap-[12px] transition-colors group ${
+                  hasActive ? "text-white" : "text-[#94A3B8] hover:bg-[rgba(255,255,255,0.04)] hover:text-white"
+                }`}
+              >
+                <span className="flex items-center gap-[12px]">
+                  <group.icon fontSize="small" className={hasActive ? "text-[#2563EB]" : "inherit"} />
+                  <span className="font-['Inter'] font-bold text-[11px] uppercase tracking-[1.2px] leading-[14px]">{group.label}</span>
+                </span>
+                <ExpandMore fontSize="small" className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              <div
+                className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
+                style={{ maxHeight: isOpen ? `${group.items.length * 44 + 8}px` : "0px" }}
+              >
+                <div className="pt-1 pb-1 pl-3 flex flex-col gap-[2px] border-l border-[rgba(255,255,255,0.08)] ml-[26px]">
+                  {group.items.map(item => {
+                    const isActive = isItemActive(item.path)
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setDrawerOpen(false)}
+                        className={`h-[40px] rounded-[8px] flex items-center pl-[14px] gap-[10px] transition-colors group ${
+                          isActive
+                            ? "bg-[#2563EB] text-white"
+                            : "text-[#64748B] hover:bg-[rgba(255,255,255,0.05)] hover:text-white"
+                        }`}
+                      >
+                        <item.icon style={{ fontSize: 16 }} className={isActive ? "text-white" : "inherit"} />
+                        <span className={`font-['Inter'] font-medium text-[13px] leading-[18px] ${isActive ? "text-white" : "text-[#64748b] group-hover:text-white"}`}>{item.label}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
           )
         })}
       </nav>
@@ -57,22 +117,19 @@ export function GuardLayout() {
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] font-sans">
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-[280px] bg-[#0A1628] text-white shadow-xl z-20">
         <SidebarContent />
       </aside>
 
-      {/* Mobile Drawer Overlay */}
       {drawerOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-[#0A1628]/50 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setDrawerOpen(false)}
         />
       )}
 
-      {/* Mobile Drawer */}
-      <aside className={`fixed inset-y-0 left-0 w-[280px] bg-[#0A1628] text-white z-50 transform transition-transform duration-300 ease-in-out md:hidden flex flex-col ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <button 
+      <aside className={`fixed inset-y-0 left-0 w-[280px] bg-[#0A1628] text-white z-50 transform transition-transform duration-300 ease-in-out md:hidden flex flex-col ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <button
           onClick={() => setDrawerOpen(false)}
           className="absolute top-6 right-4 text-[#64748B] hover:text-white"
         >
@@ -81,12 +138,10 @@ export function GuardLayout() {
         <SidebarContent />
       </aside>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Fixed Header */}
         <header className="h-16 bg-[#FFFFFF] border-b border-[#E2E8F0] flex items-center justify-between px-4 md:px-6 z-10 shrink-0 shadow-sm">
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setDrawerOpen(true)}
               className="p-2 -ml-2 text-[#0F172A] hover:bg-[#F8FAFC] rounded-lg md:hidden"
             >

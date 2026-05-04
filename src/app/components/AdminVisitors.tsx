@@ -1,416 +1,428 @@
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Avatar, AvatarFallback } from "./ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "./ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import HistoryIcon from "@mui/icons-material/History";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import PersonIcon from "@mui/icons-material/Person";
+import SearchIcon from "@mui/icons-material/Search";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
-interface Visitor {
+interface Visit {
+  id: string;
+  date: string;
+  time: string;
+  reason: string;
+  authorizedBy: string;
+  entry: string;
+}
+interface Externo {
   id: string;
   name: string;
-  reason: string;
-  area: string;
-  time: string;
-  date: string;
-  host: string;
-  code: string;
-  status: "Activo" | "Expirado" | "Pendiente";
+  origin: string;
+  idType: string;
+  idNumber: string;
+  phone: string;
+  vehicles: string[];
+  totalVisits: number;
+  lastVisit: string;
+  frequent: boolean;
+  visits: Visit[];
 }
 
-const initialVisitors: Visitor[] = [
+const allEntries = ["Puerta Principal", "Puerta Secundaria", "Vehicular Norte", "Vehicular Sur"];
+const sampleAreas = ["Centro de Cómputo", "Dirección", "Almacén", "Auditorio", "Edificio A"];
+const initials = (name: string) => name.split(" ").slice(0, 2).map(s => s[0]).join("").toUpperCase();
+const colorForName = (name: string) => {
+  const colors = ["bg-rose-100 text-rose-700", "bg-blue-100 text-blue-700", "bg-emerald-100 text-emerald-700", "bg-amber-100 text-amber-700", "bg-purple-100 text-purple-700"];
+  return colors[name.charCodeAt(0) % colors.length];
+};
+
+const initialExternos: Externo[] = [
   {
-    id: "1",
-    name: "Ing. Pedro Solís",
-    reason: "Mantenimiento equipos",
-    area: "Centro de Cómputo",
-    time: "09:00–13:00",
-    date: "Hoy",
-    host: "Gloria Delgado",
-    code: "VIS-2025-001",
-    status: "Activo",
+    id: "1", name: "Ing. Marco Ríos", origin: "Siemens", idType: "INE", idNumber: "INE-001",
+    phone: "664-100-0001", vehicles: ["MXL-5544"], totalVisits: 4, lastVisit: "Hace 3 días", frequent: false,
+    visits: [
+      { id: "v1", date: "2026-04-25", time: "09:00", reason: "Soporte técnico", authorizedBy: "Gloria Delgado", entry: "Puerta Principal" },
+    ],
   },
   {
-    id: "2",
-    name: "Lic. Martha Rojas",
-    reason: "Auditoría administrativa",
-    area: "Dirección",
-    time: "10:00–14:00",
-    date: "Hoy",
-    host: "Héctor Peña",
-    code: "VIS-2025-002",
-    status: "Activo",
+    id: "2", name: "Lic. Carmen Vidal", origin: "Freelance", idType: "INE", idNumber: "INE-002",
+    phone: "", vehicles: [], totalVisits: 1, lastVisit: "Hoy", frequent: false, visits: [],
   },
   {
-    id: "3",
-    name: "Sr. Juan Valdez",
-    reason: "Entrega de papelería",
-    area: "Almacén",
-    time: "08:00–10:00",
-    date: "Hoy",
-    host: "Norma Guerrero",
-    code: "VIS-2025-003",
-    status: "Expirado",
-  },
-  {
-    id: "4",
-    name: "Dra. Carmen Olvera",
-    reason: "Conferencia invitada",
-    area: "Auditorio",
-    time: "16:00–19:00",
-    date: "Mañana",
-    host: "Roberto Mendoza",
-    code: "VIS-2025-004",
-    status: "Activo",
-  },
-  {
-    id: "5",
-    name: "Ing. Ricardo Bernal",
-    reason: "Instalación de cámaras",
-    area: "Edificio A",
-    time: "07:00–13:00",
-    date: "Ayer",
-    host: "Raúl Ibarra",
-    code: "VIS-2025-005",
-    status: "Expirado",
+    id: "3", name: "Dr. Alejandro Fuentes", origin: "UABC", idType: "Pasaporte", idNumber: "Pasaporte-003",
+    phone: "664-300-0003", vehicles: ["BCN-1212"], totalVisits: 12, lastVisit: "Ayer", frequent: true, visits: [],
   },
 ];
 
-const hosts = ["Gloria Delgado", "Héctor Peña", "Norma Guerrero", "Roberto Mendoza", "Raúl Ibarra"];
-const areas = ["Centro de Cómputo", "Dirección", "Almacén", "Auditorio", "Edificio A", "Edificio B", "Laboratorio"];
-
 export function AdminVisitors() {
-  const [visitors, setVisitors] = useState<Visitor[]>(initialVisitors);
-  const [isNewVisitorModalOpen, setIsNewVisitorModalOpen] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState("");
-  
-  // Form State
-  const [formData, setFormData] = useState({
-    name: "",
-    reason: "",
-    area: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    host: ""
+  const [externos, setExternos] = useState<Externo[]>(initialExternos);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"Todos" | "Frecuentes" | "Primera vez">("Todos");
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", origin: "", idType: "INE", idNumber: "", phone: "", vehicles: "" });
+
+  const [historyId, setHistoryId] = useState<string | null>(null);
+  const [isVisitOpen, setIsVisitOpen] = useState(false);
+  const [visitForm, setVisitForm] = useState({ personId: "", reason: "", host: "", area: "", entry: "", vehicle: "", notes: "" });
+
+  const [quickPersonOpen, setQuickPersonOpen] = useState(false);
+  const [quickPersonName, setQuickPersonName] = useState("");
+
+  const filtered = externos.filter(e => {
+    if (filter === "Frecuentes" && !e.frequent) return false;
+    if (filter === "Primera vez" && e.totalVisits > 1) return false;
+    if (search) {
+      const s = search.toLowerCase();
+      if (![e.name, e.origin, e.idNumber].join(" ").toLowerCase().includes(s)) return false;
+    }
+    return true;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Activo": return "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20";
-      case "Expirado": return "bg-[#64748B]/10 text-[#64748B] border-[#64748B]/20";
-      case "Pendiente": return "bg-[#D97706]/10 text-[#D97706] border-[#D97706]/20";
-      default: return "bg-slate-100 text-slate-700";
+  const openNew = () => {
+    setEditingId(null);
+    setForm({ name: "", origin: "", idType: "INE", idNumber: "", phone: "", vehicles: "" });
+    setIsOpen(true);
+  };
+  const openEdit = (e: Externo) => {
+    setEditingId(e.id);
+    setForm({ name: e.name, origin: e.origin, idType: e.idType, idNumber: e.idNumber, phone: e.phone, vehicles: e.vehicles.join(", ") });
+    setIsOpen(true);
+  };
+
+  const handleSubmit = (ev: React.FormEvent) => {
+    ev.preventDefault();
+    const vehicles = form.vehicles.split(",").map(x => x.trim()).filter(Boolean);
+    if (editingId) {
+      setExternos(externos.map(e => e.id === editingId ? { ...e, ...form, vehicles } : e));
+    } else {
+      setExternos([{ id: Math.random().toString(), ...form, vehicles, totalVisits: 0, lastVisit: "—", frequent: false, visits: [] }, ...externos]);
     }
+    setIsOpen(false);
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const openVisit = (personId?: string) => {
+    setVisitForm({ personId: personId || "", reason: "", host: "", area: "", entry: "", vehicle: "", notes: "" });
+    setIsVisitOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSaveVisit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Generate code
-    const nextNum = visitors.length + 1;
-    const newCode = `VIS-2025-${nextNum.toString().padStart(3, '0')}`;
-    
-    const newVisitor: Visitor = {
+    if (!visitForm.personId) return;
+    const visit: Visit = {
       id: Math.random().toString(),
-      name: formData.name,
-      reason: formData.reason,
-      area: formData.area,
-      date: formData.date,
-      time: `${formData.startTime}–${formData.endTime}`,
-      host: formData.host,
-      code: newCode,
-      status: "Pendiente"
+      date: new Date().toISOString().slice(0, 10),
+      time: new Date().toTimeString().slice(0, 5),
+      reason: visitForm.reason,
+      authorizedBy: visitForm.host,
+      entry: visitForm.entry,
     };
-
-    setVisitors([newVisitor, ...visitors]);
-    setGeneratedCode(newCode);
-    setIsNewVisitorModalOpen(false);
-    setIsSuccessModalOpen(true);
-    
-    // Reset form
-    setFormData({
-      name: "",
-      reason: "",
-      area: "",
-      date: "",
-      startTime: "",
-      endTime: "",
-      host: ""
-    });
+    setExternos(externos.map(p => p.id === visitForm.personId ? { ...p, totalVisits: p.totalVisits + 1, lastVisit: "Hoy", visits: [visit, ...p.visits] } : p));
+    setIsVisitOpen(false);
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedCode);
-    // Could add a toast notification here
+  const handleQuickPerson = () => {
+    if (!quickPersonName.trim()) return;
+    const newPerson: Externo = {
+      id: Math.random().toString(), name: quickPersonName.trim(), origin: "—", idType: "INE", idNumber: "—",
+      phone: "", vehicles: [], totalVisits: 0, lastVisit: "—", frequent: false, visits: []
+    };
+    setExternos([newPerson, ...externos]);
+    setVisitForm(v => ({ ...v, personId: newPerson.id }));
+    setQuickPersonName("");
+    setQuickPersonOpen(false);
   };
+
+  const historyPerson = historyId ? externos.find(e => e.id === historyId) : null;
+
+  if (historyPerson) {
+    return (
+      <div className="p-6 md:p-8 max-w-7xl mx-auto w-full bg-[#F8FAFC] min-h-screen">
+        <button onClick={() => setHistoryId(null)} className="flex items-center gap-2 text-[#2563EB] hover:underline mb-6 font-medium">
+          <ArrowBackIcon fontSize="small" />Volver a personas externas
+        </button>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-[#0A1628]">Historial de visitas — {historyPerson.name}</h1>
+            <p className="text-[#64748B] mt-1 font-medium">{historyPerson.totalVisits} visitas en total</p>
+          </div>
+          <Button onClick={() => openVisit(historyPerson.id)} className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white">
+            <AddIcon fontSize="small" className="mr-2" />Registrar nueva visita
+          </Button>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] overflow-hidden">
+          {historyPerson.visits.length === 0 ? (
+            <div className="p-12 text-center text-[#64748B]">No hay visitas registradas para esta persona.</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                <tr className="text-left text-[#64748B] font-semibold">
+                  <th className="px-4 py-3">Fecha</th>
+                  <th className="px-4 py-3">Hora</th>
+                  <th className="px-4 py-3">Motivo</th>
+                  <th className="px-4 py-3">Autorizó</th>
+                  <th className="px-4 py-3">Entrada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyPerson.visits.map(v => (
+                  <tr key={v.id} className="border-b border-[#E2E8F0] last:border-0">
+                    <td className="px-4 py-3 text-[#334155]">{v.date}</td>
+                    <td className="px-4 py-3 text-[#334155]">{v.time}</td>
+                    <td className="px-4 py-3 text-[#0F172A] font-medium">{v.reason}</td>
+                    <td className="px-4 py-3 text-[#334155]">{v.authorizedBy}</td>
+                    <td className="px-4 py-3"><Badge className="bg-blue-50 text-[#2563EB] border border-blue-200">{v.entry}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto w-full flex flex-col h-full bg-[#F8FAFC]">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 shrink-0">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto w-full bg-[#F8FAFC] min-h-screen">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 mb-8">
         <div>
-          <h1 className="text-[24px] font-bold text-[#0A1628] tracking-tight leading-[32px]">Usuarios Temporales</h1>
-          <p className="text-[16px] font-medium text-[#64748B] leading-[24px]">Gestión de visitantes y accesos especiales</p>
+          <h1 className="text-2xl font-bold text-[#0A1628] tracking-tight">Personas Externas</h1>
+          <p className="text-[#64748B] mt-1 font-medium">Catálogo de visitantes externos no asociados a empresas proveedoras</p>
         </div>
-        <Button 
-          onClick={() => setIsNewVisitorModalOpen(true)}
-          className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white font-medium shadow-sm transition-all h-[36px] px-4 rounded-[8px] text-[14px]"
-        >
-          <AddIcon fontSize="small" className="mr-2" />
-          Nuevo Visitante
+        <Button onClick={openNew} className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white">
+          <AddIcon fontSize="small" className="mr-2" />Nueva Persona Externa
         </Button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] overflow-hidden flex-1 flex flex-col min-h-0">
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-left border-collapse min-w-[1000px]">
-            <thead className="sticky top-0 bg-[#F8FAFC] z-10">
-              <tr className="border-b border-[#E2E8F0]">
-                <th className="py-4 px-6 font-semibold text-[#64748B] text-[12px] uppercase tracking-wider text-left w-[277px]">Visitante</th>
-                <th className="py-4 px-6 font-semibold text-[#64748B] text-[12px] uppercase tracking-wider text-center w-[223px]">Motivo y Área</th>
-                <th className="py-4 px-6 font-semibold text-[#64748B] text-[12px] uppercase tracking-wider text-center w-[136px]">Horario</th>
-                <th className="py-4 px-6 font-semibold text-[#64748B] text-[12px] uppercase tracking-wider text-center w-[176px]">Responsable</th>
-                <th className="py-4 px-6 font-semibold text-[#64748B] text-[12px] uppercase tracking-wider text-center w-[159px]">Código</th>
-                <th className="py-4 px-6 font-semibold text-[#64748B] text-[12px] uppercase tracking-wider text-center w-[128px]">Estatus</th>
-                <th className="py-4 px-6 font-semibold text-[#64748B] text-[12px] uppercase tracking-wider text-center w-[111px]">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
-              {visitors.map((visitor) => (
-                <tr key={visitor.id} className="hover:bg-slate-50 transition-colors group h-[73px]">
-                  <td className="py-3 px-6">
-                    <div className="flex items-center gap-4">
-                      <div className="relative w-10 h-10 rounded-full bg-[#f1f5f9] p-[1px]">
-                        <div className="w-full h-full rounded-full bg-[#ececf0] flex items-center justify-center">
-                          <span className="font-bold text-sm text-[#0f172a]">
-                            {visitor.name.split(' ').filter(n => !n.includes('.')).slice(0, 2).map(n => n[0]).join('')}
-                          </span>
-                        </div>
-                        <div className="absolute inset-0 rounded-full border border-[#e2e8f0] pointer-events-none"></div>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-[#0F172A] text-[16px] leading-[24px] truncate">{visitor.name}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <p className="font-medium text-[#0F172A] text-[14px] leading-[20px]">{visitor.reason}</p>
-                    <p className="text-[#64748B] text-[12px] leading-[16px] mt-0.5">{visitor.area}</p>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <p className="font-medium text-[#0F172A] text-[14px] leading-[20px]">{visitor.time}</p>
-                    <p className="text-[#64748B] text-[12px] leading-[16px] mt-0.5">{visitor.date}</p>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <p className="font-medium text-[#0F172A] text-[14px] leading-[20px]">{visitor.host}</p>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <div className="inline-flex items-center justify-center bg-[#F8FAFC] border border-[#E2E8F0] px-2 py-1 rounded-[8px]">
-                      <span className="font-mono text-[12px] text-[#0F172A] tracking-[0.6px] leading-[16px]">
-                        {visitor.code}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <div className={`inline-flex items-center justify-center h-[25px] px-2.5 rounded-lg border ${
-                      visitor.status === 'Activo' 
-                        ? 'bg-[rgba(22,163,74,0.1)] border-[rgba(22,163,74,0.2)] text-[#16a34a]' 
-                        : visitor.status === 'Expirado'
-                        ? 'bg-[rgba(100,116,139,0.1)] border-[rgba(100,116,139,0.2)] text-[#64748b]'
-                        : 'bg-[#D97706]/10 border-[#D97706]/20 text-[#D97706]'
-                    }`}>
-                      <span className="text-[10px] font-bold tracking-[0.5px] uppercase leading-[15px]">
-                        {visitor.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-[#64748B] hover:text-[#2563EB]">
-                        <EditIcon fontSize="small" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-[#64748B] hover:text-[#DC2626]">
-                        <DeleteIcon fontSize="small" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] p-5 mb-6 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" fontSize="small" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre, empresa de origen o identificación..." className="pl-10 h-11 border-[#E2E8F0]" />
+        </div>
+        <div className="flex bg-[#E2E8F0] p-1 rounded-lg">
+          {(["Todos", "Frecuentes", "Primera vez"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all ${filter === f ? "bg-white text-[#0F172A] shadow-sm" : "text-[#64748B]"}`}>{f}</button>
+          ))}
         </div>
       </div>
 
-      {/* New Visitor Modal */}
-      <Dialog open={isNewVisitorModalOpen} onOpenChange={setIsNewVisitorModalOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white border-[#E2E8F0] rounded-2xl">
-          <div className="bg-[#0A1628] text-white p-6 pb-5">
+      <div className="bg-white rounded-xl shadow-sm border border-[#E2E8F0] overflow-hidden">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <PersonIcon className="text-[#94A3B8]" style={{ fontSize: 48 }} />
+            <h3 className="text-lg font-bold text-[#0F172A] mt-3">No hay personas externas registradas</h3>
+            <Button onClick={openNew} className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white mt-4">
+              <AddIcon fontSize="small" className="mr-2" />Nueva Persona Externa
+            </Button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                <tr className="text-left text-[#64748B] font-semibold">
+                  <th className="px-4 py-3">Persona</th>
+                  <th className="px-4 py-3">Empresa de origen</th>
+                  <th className="px-4 py-3">Identificación</th>
+                  <th className="px-4 py-3">Vehículos</th>
+                  <th className="px-4 py-3">Total visitas</th>
+                  <th className="px-4 py-3">Última visita</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(e => (
+                  <tr key={e.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC]">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${colorForName(e.name)}`}>{initials(e.name)}</div>
+                        <div>
+                          <div className="font-medium text-[#0F172A] flex items-center gap-2">
+                            {e.name}
+                            {e.frequent && <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px]">Frecuente</Badge>}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-[#334155]">{e.origin}</td>
+                    <td className="px-4 py-3 text-[#334155]">{e.idType} · {e.idNumber}</td>
+                    <td className="px-4 py-3">
+                      {e.vehicles.length > 0 ? <span className="text-[#334155]">{e.vehicles.length} vehículo{e.vehicles.length > 1 ? "s" : ""}</span> : <span className="text-[#94A3B8] text-xs">0</span>}
+                    </td>
+                    <td className="px-4 py-3 text-[#0F172A] font-semibold">{e.totalVisits}</td>
+                    <td className="px-4 py-3 text-[#334155]">{e.lastVisit}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(e)} className="h-8 w-8 p-0 text-[#64748B] hover:text-[#2563EB]"><EditIcon fontSize="small" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => setHistoryId(e.id)} className="h-8 w-8 p-0 text-[#64748B] hover:text-[#0F172A]"><HistoryIcon fontSize="small" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => openVisit(e.id)} className="h-8 px-2 text-[#2563EB] hover:bg-blue-50 font-medium text-xs"><AssignmentIcon fontSize="small" className="mr-1" />Visita</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setExternos(externos.filter(x => x.id !== e.id))} className="h-8 w-8 p-0 text-[#64748B] hover:text-[#DC2626]"><DeleteIcon fontSize="small" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Persona modal */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[520px] p-0 overflow-hidden bg-white rounded-2xl">
+          <div className="bg-[#0A1628] text-white p-6">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-white tracking-tight text-left">Registro de Visitante</DialogTitle>
-              <DialogDescription className="text-[#94A3B8] mt-1.5 text-left">
-                Complete los detalles para generar un código de acceso temporal.
-              </DialogDescription>
+              <DialogTitle className="text-xl font-bold text-white text-left">{editingId ? "Editar Persona Externa" : "Nueva Persona Externa"}</DialogTitle>
+              <DialogDescription className="text-[#94A3B8] mt-1 text-left">Visitante externo no asociado a empresa proveedora.</DialogDescription>
             </DialogHeader>
           </div>
-          
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
-            <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Nombre completo</Label>
+              <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-11 border-[#E2E8F0]" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Empresa de origen (texto libre)</Label>
+              <Input value={form.origin} onChange={e => setForm({ ...form, origin: e.target.value })} placeholder="Ej. Siemens, Freelance, UABC..." className="h-11 border-[#E2E8F0]" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-[#0F172A] font-semibold text-sm">Nombre completo</Label>
-                <Input 
-                  id="name" 
-                  required 
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="Ej. Ing. Carlos Pérez"
-                  className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reason" className="text-[#0F172A] font-semibold text-sm">Motivo de visita</Label>
-                  <Input 
-                    id="reason" 
-                    required 
-                    value={formData.reason}
-                    onChange={(e) => handleInputChange("reason", e.target.value)}
-                    placeholder="Ej. Mantenimiento"
-                    className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="area" className="text-[#0F172A] font-semibold text-sm">Área destino</Label>
-                  <Select required onValueChange={(value) => handleInputChange("area", value)} value={formData.area}>
-                    <SelectTrigger id="area" className="border-[#E2E8F0] focus:ring-[#2563EB] h-11">
-                      <SelectValue placeholder="Seleccione área" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {areas.map(area => (
-                        <SelectItem key={area} value={area}>{area}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="date" className="text-[#0F172A] font-semibold text-sm">Fecha de acceso</Label>
-                <Input 
-                  id="date" 
-                  type="date" 
-                  required 
-                  value={formData.date}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
-                  className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startTime" className="text-[#0F172A] font-semibold text-sm">Hora inicio</Label>
-                  <Input 
-                    id="startTime" 
-                    type="time" 
-                    required 
-                    value={formData.startTime}
-                    onChange={(e) => handleInputChange("startTime", e.target.value)}
-                    className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endTime" className="text-[#0F172A] font-semibold text-sm">Hora fin</Label>
-                  <Input 
-                    id="endTime" 
-                    type="time" 
-                    required 
-                    value={formData.endTime}
-                    onChange={(e) => handleInputChange("endTime", e.target.value)}
-                    className="border-[#E2E8F0] focus-visible:ring-[#2563EB] h-11"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="host" className="text-[#0F172A] font-semibold text-sm">Responsable que autoriza</Label>
-                <Select required onValueChange={(value) => handleInputChange("host", value)} value={formData.host}>
-                  <SelectTrigger id="host" className="border-[#E2E8F0] focus:ring-[#2563EB] h-11">
-                    <SelectValue placeholder="Seleccione responsable" />
-                  </SelectTrigger>
+                <Label className="text-[#0F172A] font-semibold text-sm">Tipo ID</Label>
+                <Select value={form.idType} onValueChange={v => setForm({ ...form, idType: v })}>
+                  <SelectTrigger className="h-11 border-[#E2E8F0]"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {hosts.map(host => (
-                      <SelectItem key={host} value={host}>{host}</SelectItem>
-                    ))}
+                    {["INE", "Pasaporte", "Licencia", "Otro"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label className="text-[#0F172A] font-semibold text-sm">Número ID</Label>
+                <Input required value={form.idNumber} onChange={e => setForm({ ...form, idNumber: e.target.value })} className="h-11 border-[#E2E8F0]" />
+              </div>
             </div>
-
-            <DialogFooter className="pt-4 mt-2 border-t border-[#E2E8F0]">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsNewVisitorModalOpen(false)}
-                className="font-medium"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white font-medium">
-                Guardar y Generar Código
-              </Button>
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Teléfono (opcional)</Label>
+              <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="h-11 border-[#E2E8F0]" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Vehículos asignados (placas separadas por coma)</Label>
+              <div className="flex gap-2">
+                <Input value={form.vehicles} onChange={e => setForm({ ...form, vehicles: e.target.value })} placeholder="BCN-1212" className="h-11 border-[#E2E8F0] font-mono flex-1" />
+                <Button type="button" variant="outline" onClick={() => setForm(p => ({ ...p, vehicles: p.vehicles ? p.vehicles + ", NEW-0000" : "NEW-0000" }))} className="h-11 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-medium shrink-0">
+                  <AddIcon fontSize="small" className="mr-1" />Crear y asignar
+                </Button>
+              </div>
+            </div>
+            <DialogFooter className="pt-4 border-t border-[#E2E8F0]">
+              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white">Guardar</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Success Modal */}
-      <Dialog open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white border-[#E2E8F0] rounded-2xl p-8 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-[#16A34A]/10 rounded-full flex items-center justify-center mb-4">
-            <CheckCircleIcon className="text-[#16A34A]" style={{ fontSize: 40 }} />
+      {/* Registrar visita modal */}
+      <Dialog open={isVisitOpen} onOpenChange={setIsVisitOpen}>
+        <DialogContent className="sm:max-w-[520px] p-0 overflow-hidden bg-white rounded-2xl">
+          <div className="bg-[#0A1628] text-white p-6">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-white text-left">Registrar visita de persona externa</DialogTitle>
+              <DialogDescription className="text-[#94A3B8] mt-1 text-left">Datos completos del acceso del visitante externo.</DialogDescription>
+            </DialogHeader>
           </div>
-          
-          <DialogHeader className="mb-6 w-full">
-            <DialogTitle className="text-2xl font-bold text-[#0F172A] text-center mb-2">¡Visitante Registrado!</DialogTitle>
-            <DialogDescription className="text-[#64748B] text-center text-base">
-              El código temporal ha sido generado exitosamente. Compártelo con el visitante.
-            </DialogDescription>
+          <form onSubmit={handleSaveVisit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Persona externa</Label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select value={visitForm.personId} onValueChange={v => setVisitForm({ ...visitForm, personId: v })}>
+                    <SelectTrigger className="h-11 border-[#E2E8F0]"><SelectValue placeholder="Seleccionar persona..." /></SelectTrigger>
+                    <SelectContent>
+                      {externos.map(e => <SelectItem key={e.id} value={e.id}>{e.name} — {e.origin}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="button" variant="outline" onClick={() => setQuickPersonOpen(true)} className="h-11 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-medium shrink-0">
+                  <AddIcon fontSize="small" className="mr-1" />Crear y asignar
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Motivo de la visita</Label>
+              <Input required value={visitForm.reason} onChange={e => setVisitForm({ ...visitForm, reason: e.target.value })} className="h-11 border-[#E2E8F0]" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">A quién va a ver / con quién tiene cita</Label>
+              <Input value={visitForm.host} onChange={e => setVisitForm({ ...visitForm, host: e.target.value })} className="h-11 border-[#E2E8F0]" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-[#0F172A] font-semibold text-sm">Área de destino</Label>
+                <Select value={visitForm.area} onValueChange={v => setVisitForm({ ...visitForm, area: v })}>
+                  <SelectTrigger className="h-11 border-[#E2E8F0]"><SelectValue placeholder="Área..." /></SelectTrigger>
+                  <SelectContent>{sampleAreas.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#0F172A] font-semibold text-sm">Entrada utilizada</Label>
+                <Select value={visitForm.entry} onValueChange={v => setVisitForm({ ...visitForm, entry: v })}>
+                  <SelectTrigger className="h-11 border-[#E2E8F0]"><SelectValue placeholder="Entrada..." /></SelectTrigger>
+                  <SelectContent>{allEntries.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Vehículo con el que llega</Label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select value={visitForm.vehicle} onValueChange={v => setVisitForm({ ...visitForm, vehicle: v })}>
+                    <SelectTrigger className="h-11 border-[#E2E8F0]"><SelectValue placeholder="Vehículo..." /></SelectTrigger>
+                    <SelectContent>
+                      {(externos.find(e => e.id === visitForm.personId)?.vehicles || []).map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      <SelectItem value="—">Sin vehículo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="button" variant="outline" className="h-11 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 font-medium shrink-0">
+                  <AddIcon fontSize="small" className="mr-1" />Crear y asignar
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#0F172A] font-semibold text-sm">Observaciones (opcional)</Label>
+              <Textarea value={visitForm.notes} onChange={e => setVisitForm({ ...visitForm, notes: e.target.value })} className="min-h-[80px] border-[#E2E8F0] resize-none" />
+            </div>
+            <DialogFooter className="pt-4 border-t border-[#E2E8F0]">
+              <Button type="button" variant="outline" onClick={() => setIsVisitOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white">Registrar visita</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick-create persona */}
+      <Dialog open={quickPersonOpen} onOpenChange={setQuickPersonOpen}>
+        <DialogContent className="sm:max-w-[420px] bg-white rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-[#0A1628]">Crear y asignar persona externa</DialogTitle>
+            <DialogDescription>Creación rápida — quedará asignada a la visita.</DialogDescription>
           </DialogHeader>
-
-          <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-6 w-full mb-8">
-            <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-2">Código de Acceso</p>
-            <p className="text-3xl font-mono font-bold text-[#0A1628] tracking-widest">{generatedCode}</p>
+          <div className="space-y-2 py-2">
+            <Label className="text-[#0F172A] font-semibold text-sm">Nombre completo</Label>
+            <Input value={quickPersonName} onChange={e => setQuickPersonName(e.target.value)} className="h-11 border-[#E2E8F0]" />
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full">
-            <Button 
-              variant="outline" 
-              className="flex-1 font-semibold h-12 border-[#E2E8F0] hover:bg-[#F8FAFC]"
-              onClick={() => setIsSuccessModalOpen(false)}
-            >
-              Cerrar
-            </Button>
-            <Button 
-              className="flex-1 bg-[#2563EB] hover:bg-[#1E3A5F] text-white font-semibold h-12"
-              onClick={copyToClipboard}
-            >
-              <ContentCopyIcon fontSize="small" className="mr-2" />
-              Copiar Código
-            </Button>
-          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickPersonOpen(false)}>Cancelar</Button>
+            <Button onClick={handleQuickPerson} className="bg-[#2563EB] hover:bg-[#1E3A5F] text-white">Crear y asignar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
