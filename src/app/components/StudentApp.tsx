@@ -3,20 +3,22 @@ import { useState } from "react"
 import { useNavigate } from "react-router"
 import { 
   QrCode2, Sensors, Notifications, CheckCircle, Info, Warning, Logout,
-  ReportProblem, LocalParking, CreditCard, Close, AddPhotoAlternate, CheckCircleOutline
+  ReportProblem, LocalParking, CreditCard, Close, AddPhotoAlternate, CheckCircleOutline, Settings
 } from "@mui/icons-material"
 import { motion, AnimatePresence } from "motion/react"
 
+import { UserSettings } from './UserSettings'
+
 export function StudentLayout() {
-  const [activeTab, setActiveTab] = useState<'id' | 'notifications' | 'incidents' | 'parking'>('id')
+  const [activeTab, setActiveTab] = useState<'id' | 'notifications' | 'incidents' | 'parking' | 'settings'>('id')
   const navigate = useNavigate()
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex justify-center font-sans">
-      <div className="w-full max-w-[480px] bg-white min-h-screen shadow-2xl relative flex flex-col">
+      <div className="w-full max-w-[480px] bg-white min-h-screen shadow-2xl relative flex flex-col overflow-hidden">
         
         {/* Header */}
-        <header className="bg-[#0A1628] text-white pt-12 pb-6 px-6 relative rounded-b-[24px] shadow-md z-10 shrink-0">
+        <header className="bg-[#0A1628] text-white pt-12 pb-6 px-6 relative rounded-b-[24px] shadow-md z-30 shrink-0">
            <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-2">
                  <img src={image_08d7f3e39cb34f93fbc9e462522d285a26eeb1ff} alt="Klavis" className="w-8 h-8 object-contain filter brightness-0 invert" />
@@ -32,7 +34,7 @@ export function StudentLayout() {
               </div>
            </div>
 
-           {activeTab === 'id' && (
+           {(activeTab === 'id' || activeTab === 'settings') && (
              <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-white/10 border-2 border-white/20 p-1">
                    <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80" alt="Profile" className="w-full h-full rounded-full object-cover" />
@@ -59,10 +61,11 @@ export function StudentLayout() {
            {activeTab === 'notifications' && <StudentNotifications />}
            {activeTab === 'incidents' && <StudentIncidents />}
            {activeTab === 'parking' && <StudentParking />}
+           {activeTab === 'settings' && <UserSettings role="student" />}
         </main>
 
         {/* Bottom Nav */}
-        <nav className="absolute bottom-0 left-0 right-0 h-16 bg-white border-t border-[#E2E8F0] flex items-center justify-around px-2 z-50 rounded-t-2xl shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <nav className="absolute bottom-0 left-0 right-0 h-16 bg-white border-t border-[#E2E8F0] flex items-center justify-around px-1 z-50 rounded-t-2xl shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
           <NavButton active={activeTab === 'id'} icon={<CreditCard />} label="Credencial" onClick={() => setActiveTab('id')} />
           <NavButton active={activeTab === 'parking'} icon={<LocalParking />} label="Parking" onClick={() => setActiveTab('parking')} />
           <NavButton active={activeTab === 'incidents'} icon={<ReportProblem />} label="Incidencias" onClick={() => setActiveTab('incidents')} />
@@ -72,6 +75,7 @@ export function StudentLayout() {
               <span className="absolute top-0 right-0 w-2 h-2 bg-[#DC2626] rounded-full border border-white"></span>
             </div>
           } label="Avisos" onClick={() => setActiveTab('notifications')} />
+          <NavButton active={activeTab === 'settings'} icon={<Settings />} label="Ajustes" onClick={() => setActiveTab('settings')} />
         </nav>
       </div>
     </div>

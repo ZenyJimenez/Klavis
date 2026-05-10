@@ -2,7 +2,7 @@ import imgKlavisLogo1 from "figma:asset/da9c5f090346b090388c669d3e7c116edcd58dfb
 import { Outlet, Link, useLocation } from "react-router"
 import {
   Shield, AccessTime, Event, Notifications, Logout, Menu,
-  ReportProblem, LocalParking, Close, ExpandMore, Verified, BusinessCenter
+  ReportProblem, LocalParking, Close, ExpandMore, Verified, BusinessCenter, Settings
 } from "@mui/icons-material"
 import { useState, useMemo } from "react"
 
@@ -29,6 +29,12 @@ const NAV_GROUPS: NavGroup[] = [
     id: "seguridad", label: "Seguridad", icon: ReportProblem,
     items: [
       { icon: ReportProblem, label: "Incidentes", path: "/guard/incidents" },
+    ],
+  },
+  {
+    id: "sistema", label: "Sistema", icon: Settings,
+    items: [
+      { icon: Settings, label: "Ajustes", path: "/guard/settings" },
     ],
   },
 ]

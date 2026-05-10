@@ -21,6 +21,8 @@ import { AdminParking } from "./components/AdminParking"
 import { AdminVehicles } from "./components/AdminVehicles"
 import { AdminSensors } from "./components/AdminSensors"
 
+import { UserSettings } from "./components/UserSettings"
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -53,6 +55,7 @@ export const router = createBrowserRouter([
       { path: "notices", Component: GuardNotices },
       { path: "incidents", Component: GuardIncidents },
       { path: "parking", Component: GuardParking },
+      { path: "settings", Component: () => <UserSettings role="guard" /> },
     ],
   },
   {
