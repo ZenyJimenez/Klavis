@@ -70,6 +70,7 @@ export function GuardRealtime() {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   
   const [reportingId, setReportingId] = useState<number | null>(null)
+  const [reportType, setReportType] = useState<'anomaly' | 'rejection'>('anomaly')
   const [reportText, setReportText] = useState('')
   const [isSending, setIsSending] = useState(false)
 
@@ -77,21 +78,37 @@ export function GuardRealtime() {
     setAccesses(prev => prev.map(a => a.id === id ? { ...a, status: 'authorized', time: 'Justo ahora' } : a))
   }
 
-  const handleReject = (id: number) => {
-    setAccesses(prev => prev.map(a => a.id === id ? { ...a, status: 'rejected', time: 'Justo ahora' } : a))
+  const handleRejectAction = (id: number) => {
+    setReportType('rejection')
+    setReportingId(id)
   }
 
-  const handleSendAnomaly = (id: number) => {
+  const handleFinalAction = (id: number) => {
     setIsSending(true)
     setTimeout(() => {
-      setAccesses(prev => prev.map(a => a.id === id ? { ...a, status: 'anomaly', anomalyDescription: reportText } : a))
+      if (reportType === 'rejection') {
+        setAccesses(prev => prev.map(a => a.id === id ? { 
+          ...a, 
+          status: 'rejected', 
+          time: 'Justo ahora',
+          anomalyDescription: reportText // Reuse field for rejection reason
+        } : a))
+      } else {
+        setAccesses(prev => prev.map(a => a.id === id ? { ...a, status: 'anomaly', anomalyDescription: reportText } : a))
+        // Simulate admin solution after 5 seconds
+        setTimeout(() => {
+          setAccesses(prev => prev.map(a => a.id === id ? { ...a, adminSolution: "El proveedor tiene permiso temporal. Favor de autorizar el acceso vehicular." } : a))
+        }, 5000)
+      }
       setIsSending(false)
       setReportingId(null)
       setReportText('')
-      setTimeout(() => {
-        setAccesses(prev => prev.map(a => a.id === id ? { ...a, adminSolution: "El proveedor tiene permiso temporal. Favor de autorizar el acceso vehicular." } : a))
-      }, 5000)
     }, 1000)
+  }
+
+  const handleAnomalyAction = (id: number) => {
+    setReportType('anomaly')
+    setReportingId(id)
   }
 
   const filteredAccesses = accesses.filter(a => {
@@ -185,9 +202,16 @@ export function GuardRealtime() {
                     </div>
 
                     {!isLatest && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[11px] font-bold text-[#64748B] bg-gray-100 px-2 py-0.5 rounded">{access.gate}</span>
-                        {access.plate && <span className="text-[11px] font-mono font-bold text-[#2563EB] bg-blue-50 px-2 py-0.5 rounded">{access.plate}</span>}
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-xs ${
+                          access.status === 'authorized' ? 'bg-[#16A34A] text-white' : 
+                          access.status === 'rejected' ? 'bg-[#DC2626] text-white' : 
+                          'bg-amber-500 text-white'
+                        }`}>
+                          {access.status === 'authorized' ? 'Aprobado' : access.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded border border-[#E2E8F0]">{access.gate}</span>
+                        {access.plate && <span className="text-[11px] font-mono font-bold text-[#2563EB] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{access.plate}</span>}
                       </div>
                     )}
 
@@ -235,12 +259,12 @@ export function GuardRealtime() {
                               <CheckCircle className="mb-1" />
                               <span className="text-[10px] font-bold uppercase tracking-wider">Aprobar</span>
                             </button>
-                            <button onClick={() => handleReject(access.id)} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-600 text-white hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-100">
+                            <button onClick={() => handleRejectAction(access.id)} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-red-600 text-white hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-100">
                               <Cancel className="mb-1" />
                               <span className="text-[10px] font-bold uppercase tracking-wider">Rechazar</span>
                             </button>
                             {access.status === 'pending' && (
-                              <button onClick={() => setReportingId(access.id)} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-amber-500 text-white hover:bg-amber-600 transition-all active:scale-95 shadow-lg shadow-amber-100">
+                              <button onClick={() => handleAnomalyAction(access.id)} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-amber-500 text-white hover:bg-amber-600 transition-all active:scale-95 shadow-lg shadow-amber-100">
                                 <Warning className="mb-1" />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">Anomalía</span>
                               </button>
@@ -262,8 +286,17 @@ export function GuardRealtime() {
                   </div>
                   
                   {!isLatest && (
-                    <div className="pr-4 text-gray-300">
-                      <ArrowForwardIos style={{ fontSize: 14 }} />
+                    <div className="pr-4 flex flex-col items-end gap-1 shrink-0">
+                      {access.type === 'vehicular' ? (
+                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                          <DirectionsCar style={{ fontSize: 16 }} className="text-[#2563EB]" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+                          <Group style={{ fontSize: 16 }} className="text-gray-400" />
+                        </div>
+                      )}
+                      <span className="text-[9px] font-bold uppercase text-gray-400 tracking-tighter">{access.type}</span>
                     </div>
                   )}
                 </div>
@@ -273,19 +306,19 @@ export function GuardRealtime() {
         </AnimatePresence>
       </div>
 
-      {/* Anomaly Modal */}
+      {/* Anomaly/Rejection Modal */}
       <AnimatePresence>
         {reportingId && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-[#0A1628]/60 backdrop-blur-sm">
             <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl">
-              <div className="p-8 bg-[#0A1628] text-white">
+              <div className={`p-8 ${reportType === 'rejection' ? 'bg-[#DC2626]' : 'bg-[#0A1628]'} text-white transition-colors`}>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
-                    <Warning />
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${reportType === 'rejection' ? 'bg-white/20 shadow-red-500/20' : 'bg-amber-500 shadow-amber-500/20'}`}>
+                    {reportType === 'rejection' ? <Cancel /> : <Warning />}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">Reportar Anomalía</h3>
-                    <p className="text-white/60 text-xs">Se notificará a la administración</p>
+                    <h3 className="text-xl font-bold">{reportType === 'rejection' ? 'Motivo de Rechazo' : 'Reportar Anomalía'}</h3>
+                    <p className="text-white/60 text-xs">{reportType === 'rejection' ? 'Especifica por qué se deniega el acceso' : 'Se notificará a la administración'}</p>
                   </div>
                 </div>
               </div>
@@ -293,13 +326,26 @@ export function GuardRealtime() {
                 <textarea 
                   value={reportText}
                   onChange={(e) => setReportText(e.target.value)}
-                  placeholder="Detalla lo sucedido..."
-                  className="w-full h-32 p-5 bg-gray-50 border-none rounded-3xl focus:ring-2 focus:ring-amber-500 transition-all text-[15px] outline-none resize-none"
+                  placeholder={reportType === 'rejection' ? "Ej. Documentación incompleta, comportamiento sospechoso..." : "Detalla lo sucedido..."}
+                  className={`w-full h-32 p-5 bg-gray-50 border-none rounded-3xl transition-all text-[15px] outline-none resize-none focus:ring-2 ${reportType === 'rejection' ? 'focus:ring-red-500' : 'focus:ring-amber-500'}`}
                 />
                 <div className="grid grid-cols-2 gap-4">
                   <button onClick={() => setReportingId(null)} className="h-14 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 transition-all">Cancelar</button>
-                  <button disabled={!reportText || isSending} onClick={() => handleSendAnomaly(reportingId)} className="h-14 bg-amber-500 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-amber-600 disabled:opacity-50 transition-all shadow-lg shadow-amber-100">
-                    {isSending ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Send fontSize="small" />Enviar Aviso</>}
+                  <button 
+                    disabled={!reportText || isSending} 
+                    onClick={() => handleFinalAction(reportingId)} 
+                    className={`h-14 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg ${
+                      reportType === 'rejection' ? 'bg-red-600 hover:bg-red-700 shadow-red-100' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-100'
+                    } disabled:opacity-50`}
+                  >
+                    {isSending ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        {reportType === 'rejection' ? <CheckCircle fontSize="small" /> : <Send fontSize="small" />}
+                        {reportType === 'rejection' ? 'Confirmar Rechazo' : 'Enviar Aviso'}
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
