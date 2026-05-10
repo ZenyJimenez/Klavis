@@ -20,6 +20,7 @@ import { AdminSettings } from "./components/AdminSettings"
 import { AdminParking } from "./components/AdminParking"
 import { AdminVehicles } from "./components/AdminVehicles"
 import { AdminSensors } from "./components/AdminSensors"
+import { AdminNotices } from "./components/AdminNotices"
 
 import { UserSettings } from "./components/UserSettings"
 
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: "parking", Component: AdminParking },
       { path: "reports", Component: AdminReports },
       { path: "incidents", Component: AdminIncidents },
+      { path: "notices", Component: AdminNotices },
       { path: "settings", Component: AdminSettings },
     ],
   },

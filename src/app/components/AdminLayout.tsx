@@ -23,6 +23,8 @@ import {
 
 import imgKlavisLogo1 from "figma:asset/da9c5f090346b090388c669d3e7c116edcd58dfb.png"
 
+import { NotificationsActive } from "@mui/icons-material"
+
 interface NavItem { icon: any; label: string; path: string }
 interface NavGroup { id: string; label: string; icon: any; items: NavItem[] }
 
@@ -55,6 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { icon: BarChart, label: "Reportes", path: "/admin/reports" },
       { icon: ReportProblem, label: "Incidentes", path: "/admin/incidents" },
+      { icon: NotificationsActive, label: "Avisos", path: "/admin/notices" },
     ],
   },
   {

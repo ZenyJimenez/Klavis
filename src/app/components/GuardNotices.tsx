@@ -51,14 +51,6 @@ const initialNotices: Notice[] = [
     read: false,
   },
   {
-    id: "5",
-    type: "info",
-    text: "Se han renovado 12 credenciales de estudiante",
-    timestamp: "Ayer, 16:20",
-    category: "Credenciales",
-    read: false,
-  },
-  {
     id: "6",
     type: "system",
     text: "Mantenimiento programado: Puerta Norte inactiva de 20:00 a 22:00",

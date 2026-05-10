@@ -22,7 +22,6 @@ const NAV_GROUPS: NavGroup[] = [
     id: "visitantes", label: "Visitantes", icon: BusinessCenter,
     items: [
       { icon: Event, label: "Calendario", path: "/guard/calendar" },
-      { icon: Notifications, label: "Avisos", path: "/guard/notices" },
     ],
   },
   {
@@ -34,6 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     id: "sistema", label: "Sistema", icon: Settings,
     items: [
+      { icon: Notifications, label: "Avisos", path: "/guard/notices" },
       { icon: Settings, label: "Ajustes", path: "/guard/settings" },
     ],
   },

@@ -1,3 +1,4 @@
+import { NotificationsActive } from "@mui/icons-material"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import { 
   SupervisedUserCircle, 
@@ -6,7 +7,7 @@ import {
   DoorFront,
   Notifications
 } from "@mui/icons-material"
-import { Card, Badge } from "./ui"
+import { Badge, Button } from "./ui"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -80,8 +81,8 @@ export function AdminDashboard() {
           { label: "Accesos Hoy", value: "30", icon: VerifiedUser, color: "text-[#16A34A]", bg: "bg-[#16A34A]/10" },
           { label: "Visitantes Activos", value: "3", icon: Person, color: "text-[#D97706]", bg: "bg-[#D97706]/10" },
           { label: "Puertas Activas", value: "4", icon: DoorFront, color: "text-[#64748B]", bg: "bg-[#E2E8F0]" },
-        ].map((kpi, i) => (
-          <Card key={i} className="p-6 flex items-center gap-5">
+        ].map((kpi) => (
+          <Card key={kpi.label} className="p-6 flex items-center gap-5">
             <div className={`p-4 rounded-[12px] ${kpi.bg}`}>
               <kpi.icon fontSize="large" className={kpi.color} />
             </div>
@@ -99,7 +100,7 @@ export function AdminDashboard() {
           <h3 className="text-base font-semibold text-[#0F172A] mb-6">Accesos por Hora</h3>
           <div className="flex-1 min-h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={250}>
-              <BarChart accessibilityLayer={false} id="access-chart" data={accessData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart accessibilityLayer={false} data={accessData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
                 <Tooltip 
@@ -117,10 +118,10 @@ export function AdminDashboard() {
           <h3 className="text-base font-semibold text-[#0F172A] mb-6">Distribución por Tipo</h3>
           <div className="flex-1 min-h-[200px] flex items-center justify-center relative">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
-              <PieChart accessibilityLayer={false} id="users-pie-chart" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <PieChart accessibilityLayer={false} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                 <Pie data={userTypes} innerRadius="65%" outerRadius="85%" paddingAngle={2} dataKey="value" stroke="none">
-                  {userTypes.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {userTypes.map((entry) => (
+                    <Cell key={`pie-cell-${entry.name}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip 
@@ -136,7 +137,7 @@ export function AdminDashboard() {
           </div>
           <div className="flex flex-col gap-3 mt-4">
             {userTypes.map(t => (
-              <div key={t.name} className="flex items-center justify-between text-sm">
+              <div key={`legend-${t.name}`} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 text-[#0F172A] font-medium">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }} />
                   {t.name}
@@ -156,8 +157,8 @@ export function AdminDashboard() {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {recentAccesses.map((access, i) => (
-            <Card key={i} className="p-4 flex flex-col gap-4">
+          {recentAccesses.map((access) => (
+            <Card key={`${access.name}-${access.time}`} className="p-4 flex flex-col gap-4">
               <div className="flex items-center gap-3">
                 <div className={`w-12 h-12 rounded-full border flex items-center justify-center font-bold text-sm ${getRoleColor(access.role)}`}>
                   {access.name.split(' ').map(n => n[0]).join('').substring(0, 2)}

@@ -43,13 +43,13 @@ export function UserSettings({ role }: UserSettingsProps) {
   const isStudent = role === "student"
 
   const sections = [
-    { 
+    ...(isStudent ? [{ 
       id: "profile", 
       label: "Gestión de Perfil", 
       desc: "Nombre, foto y usuario", 
       icon: <Person className="text-blue-600" />,
       component: <ProfileSection onBack={() => setActiveSection(null)} />
-    },
+    }] : []),
     { 
       id: "security", 
       label: "Seguridad y Acceso", 
