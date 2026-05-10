@@ -279,7 +279,11 @@ function StudentParking() {
               <h3 className="font-bold text-[#0F172A]">{z.name}</h3>
               <span className="text-[10px] font-bold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{z.type}</span>
             </div>
-            <div className={`w-3 h-3 rounded-full ${z.status === 'full' ? 'bg-[#DC2626]' : 'bg-[#16A34A]'}`} />
+            <div className={`w-3 h-3 rounded-full ${
+              z.status === 'full' ? 'bg-[#DC2626]' : 
+              ((z.occ/z.cap)*100 >= 60 && (z.occ/z.cap)*100 <= 70) ? 'bg-[#F59E0B]' : 
+              'bg-[#16A34A]'
+            }`} />
           </div>
 
           <div className="space-y-1">
@@ -289,7 +293,11 @@ function StudentParking() {
             </div>
             <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
               <div 
-                className={`h-full rounded-full ${z.status === 'full' ? 'bg-[#DC2626]' : 'bg-[#16A34A]'}`}
+                className={`h-full rounded-full ${
+                  z.status === 'full' ? 'bg-[#DC2626]' : 
+                  ((z.occ/z.cap)*100 >= 60 && (z.occ/z.cap)*100 <= 70) ? 'bg-[#F59E0B]' : 
+                  'bg-[#16A34A]'
+                }`}
                 style={{width: `${(z.occ/z.cap)*100}%`}}
               />
             </div>
