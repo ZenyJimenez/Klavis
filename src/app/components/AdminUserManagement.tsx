@@ -43,6 +43,10 @@ export function AdminUserManagement() {
   const [vehicleMode, setVehicleMode] = useState<"existing" | "new">("existing")
   const [vehicleSearch, setVehicleSearch] = useState("")
   const [selectedVehiclePlate, setSelectedVehiclePlate] = useState<string | null>(null)
+  
+  // Disability state
+  const [hasDisability, setHasDisability] = useState(false)
+  const [disabilityType, setDisabilityType] = useState("permanent")
 
   const filteredUsers = MOCK_USERS.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -266,6 +270,87 @@ export function AdminUserManagement() {
                             <option>Ing. Industrial</option>
                             <option>Ing. Mecatrónica</option>
                           </select>
+                        </div>
+
+                        {/* Sección de Discapacidad */}
+                        <div className="md:col-span-2 pt-4 border-t border-[#F1F5F9] space-y-4">
+                          <div className="flex items-center justify-between p-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-[#0F172A]">¿Cuenta con alguna discapacidad?</span>
+                              <span className="text-[11px] text-[#64748B]">Marque esta opción para habilitar beneficios de acceso preferente.</span>
+                            </div>
+                            <div className="flex gap-2">
+                              <button 
+                                type="button"
+                                onClick={() => setHasDisability(false)}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${!hasDisability ? 'bg-[#0A1628] text-white shadow-md' : 'bg-white border border-[#E2E8F0] text-[#64748B]'}`}
+                              >
+                                NO
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => setHasDisability(true)}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${hasDisability ? 'bg-[#2563EB] text-white shadow-md' : 'bg-white border border-[#E2E8F0] text-[#64748B]'}`}
+                              >
+                                SÍ
+                              </button>
+                            </div>
+                          </div>
+
+                          <AnimatePresence>
+                            {hasDisability && (
+                              <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden"
+                              >
+                                <div className="space-y-1.5">
+                                  <label className="text-sm font-medium text-[#0F172A]">Número de Folio / Certificado</label>
+                                  <input type="text" placeholder="Ej. DIS-2026-X" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-sm font-medium text-[#0F172A]">Tipo de Discapacidad</label>
+                                  <select className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]">
+                                    <option>Motriz / Física</option>
+                                    <option>Visual</option>
+                                    <option>Auditiva</option>
+                                    <option>Intelectual / Psicosocial</option>
+                                    <option>Múltiple</option>
+                                  </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-sm font-medium text-[#0F172A]">Vigencia</label>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <button 
+                                      type="button"
+                                      onClick={() => setDisabilityType("permanent")}
+                                      className={`h-10 rounded-lg text-xs font-bold transition-all ${disabilityType === "permanent" ? 'bg-[#0A1628] text-white' : 'bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]'}`}
+                                    >
+                                      Permanente
+                                    </button>
+                                    <button 
+                                      type="button"
+                                      onClick={() => setDisabilityType("temporary")}
+                                      className={`h-10 rounded-lg text-xs font-bold transition-all ${disabilityType === "temporary" ? 'bg-[#2563EB] text-white' : 'bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]'}`}
+                                    >
+                                      Temporal
+                                    </button>
+                                  </div>
+                                </div>
+                                {disabilityType === "temporary" && (
+                                  <motion.div 
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="space-y-1.5"
+                                  >
+                                    <label className="text-sm font-medium text-[#0F172A]">Fin de la discapacidad</label>
+                                    <input type="date" className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]" />
+                                  </motion.div>
+                                )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
                     </div>

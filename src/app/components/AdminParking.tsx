@@ -188,7 +188,18 @@ export function AdminParking() {
                   aspectRatio: '80/60'
                 }}
               >
-                <div className={`w-full h-full rounded-[10px] shadow-md border-2 border-white flex flex-col items-center justify-center ${getStatusColor(zone.occ, zone.cap, zone.violations)} text-white`}>
+                <div className={`w-full h-full rounded-[10px] shadow-md border-2 border-white flex flex-col items-center justify-center ${
+                  zone.id === 'A' ? 'bg-[#2563EB]' : 
+                  zone.id === 'B' ? 'bg-[#7C3AED]' : 
+                  zone.id === 'C' ? 'bg-[#059669]' : 
+                  zone.id === 'D' ? 'bg-[#D97706]' : 
+                  zone.id === 'E' ? 'bg-[#DC2626]' : 
+                  zone.id === 'T1' ? 'bg-[#4F46E5]' : 
+                  zone.id === 'T2' ? 'bg-[#0891B2]' : 
+                  zone.id === 'T3' ? 'bg-[#EA580C]' : 
+                  zone.id === 'T4' ? 'bg-[#DB2777]' : 
+                  'bg-slate-600'
+                } text-white`}>
                   <span className="font-bold text-[clamp(10px,1.5vw,18px)] leading-none mb-0.5">{zone.id}</span>
                   <span className="text-[clamp(8px,1vw,12px)] opacity-90 leading-none">{Math.round((zone.occ/zone.cap)*100)}%</span>
                 </div>
